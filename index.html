@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TrueID - FinTech KYC & Fraud Guard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+        <h1 class="text-2xl font-bold mb-2 text-indigo-400">🛡️ TrueID: Secure Onboarding</h1>
+        <p class="text-sm text-slate-400 mb-6">Upload an official ID document and a live selfie for biometric verification and anti-spoofing checks.</p>
+        
+        <form id="kycForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Government ID Card Photo</label>
+                <input type="file" id="idCard" required class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Live Capture Selfie</label>
+                <input type="file" id="selfie" required class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
+            </div>
+            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-xl transition duration-200">Run Biometric Security Check</button>
+        </form>
+
+        <div id="resultBox" class="mt-6 hidden p-4 rounded-xl border text-sm"></div>
+    </div>
+
+    <script>
+        document.getElementById('kycForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const box = document.getElementById('resultBox');
+            box.classList.remove('hidden');
+            box.className = "mt-6 p-4 rounded-xl border bg-slate-800 border-slate-700 text-amber-400";
+            box.innerText = "Analyzing biometric features & anti-spoofing vectors...";
+
+            const formData = new FormData();
+            formData.append("id_card", document.getElementById('idCard').files[0]);
+            formData.append("selfie", document.getElementById('selfie').files[0]);
+
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/verify-identity', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if(data.verified) {
+                    box.className = "mt-6 p-4 rounded-xl border bg-emerald-950/50 border-emerald-600 text-emerald-300";
+                    box.innerHTML = `<strong>✅ Verification Approved</strong><br>${data.message} (Distance score: ${data.distance})`;
+                } else {
+                    box.className = "mt-6 p-4 rounded-xl border bg-rose-950/50 border-rose-600 text-rose-300";
+                    box.innerHTML = `<strong>❌ Verification Rejected</strong><br>${data.reason || data.message}`;
+                }
+            } catch (err) {
+                box.className = "mt-6 p-4 rounded-xl border bg-rose-950/50 border-rose-600 text-rose-300";
+                box.innerText = "Error connecting to verification server.";
+            }
+        });
+    </script>
+</body>
+</html>
